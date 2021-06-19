@@ -1,0 +1,113 @@
+const fs = require("fs");
+const axios = require("axios");
+const { JSDOM } = require("jsdom");
+const iptvCatDomain = "iptvcat.com";
+const iptvCatURL = "https://" + iptvCatDomain;
+const filePath = `./data/brazil.json`
+const FinalScrap = []
+
+function getStreamID(value) {
+  const Id = value.replace("border-solid belongs_to_", "");
+  return Id;
+}
+
+async function getScrapping(url) {
+  return new Promise(async (resolve, reject) => {
+    console.log("Visited: " + url);
+    const resp = await axios.get(url);
+    const dom = new JSDOM(resp.data);
+
+    const nextPage =
+      dom.window.document.querySelector('a[rel="next"]') !== null
+        ? iptvCatURL +
+          dom.window.document
+            .querySelector('a[rel="next"]')
+            .getAttribute("href")
+        : null;
+
+    const ID = [],
+      Link = [],
+      Channel = [],
+      Country = [],
+      Liveliness = [],
+      Status = [],
+      Format = [],
+      Mbps = [],
+      LastChecked = [];
+
+    dom.window.document
+      .querySelectorAll("tbody.streams_table > tr.border-solid")
+      .forEach((item) => {
+        if (item.getAttribute("class").includes("belongs_to_")) {
+          ID.push({ ID: getStreamID(item.getAttribute("class")) });
+        }
+      });
+    dom.window.document
+      .querySelectorAll("td > table > tbody > tr > td:nth-child(2) > span")
+      .forEach((item) => {
+        Link.push({ Link: item.getAttribute("data-clipboard-text") });
+      });
+    dom.window.document
+      .querySelectorAll("td.flag > a > img")
+      .forEach((item) => {
+        Country.push({ Country: item.getAttribute("title") });
+      });
+    dom.window.document
+      .querySelectorAll("td > span.channel_name")
+      .forEach((item) => {
+        Channel.push({ Channel: item.textContent });
+      });
+    dom.window.document
+      .querySelectorAll("td > div.live > div.live")
+      .forEach((item) => {
+        Liveliness.push({ Liveliness: item.textContent });
+      });
+    dom.window.document.querySelectorAll("td > div.state").forEach((item) => {
+      Status.push({ Status: item.getAttribute("title") });
+    });
+    dom.window.document
+      .querySelectorAll("td.channel_checked > span")
+      .forEach((item) => {
+        LastChecked.push({ LastChecked: item.textContent });
+      });
+    dom.window.document.querySelectorAll("td:nth-child(6)").forEach((item) => {
+      Format.push({ Format: item.textContent });
+    });
+    dom.window.document
+      .querySelectorAll("td:nth-child(7) > span")
+      .forEach((item) => {
+        Mbps.push({ Mbps: item.textContent });
+      });
+
+    const channels = ID.map((item, i) => {
+      const obj = Object.assign(
+        {},
+        item,
+        Channel[i],
+        Link[i],
+        Country[i],
+        Liveliness[i],
+        Status[i],
+        Format[i],
+        Mbps[i],
+        LastChecked[i]
+      );
+      return obj;
+    });
+    
+    const concat = FinalScrap.concat(...channels)
+    FinalScrap.push(...concat)
+
+    if (nextPage !== null) {
+      getScrapping(nextPage);
+    } else {
+      fs.writeFile(filePath, JSON.stringify(FinalScrap), function (err) {
+        if (err) return console.log(err);
+        console.log('Sucess');
+      });
+      resolve(FinalScrap);
+    }
+  });
+}
+
+getScrapping(iptvCatURL + "/brazil");
