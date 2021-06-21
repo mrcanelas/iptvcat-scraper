@@ -11,6 +11,14 @@ function getStreamID(value) {
   return Id;
 }
 
+async function getRedirect(value) {
+  const redirect = await axios.get(value)
+  .then(function (resp) {
+    return resp.data.split('\n').filter(a => a.includes("iptvcat"))[0]
+  })
+  return redirect
+}
+
 async function getScrapping(url) {
   return new Promise(async (resolve, reject) => {
     console.log("Visited: " + url);
@@ -26,6 +34,7 @@ async function getScrapping(url) {
         : null;
 
     const ID = [],
+      tempLink = [],
       Link = [],
       Channel = [],
       Country = [],
@@ -45,7 +54,7 @@ async function getScrapping(url) {
     dom.window.document
       .querySelectorAll("td > table > tbody > tr > td:nth-child(2) > span")
       .forEach((item) => {
-        Link.push({ Link: item.getAttribute("data-clipboard-text") });
+        tempLink.push({ Link: item.getAttribute("data-clipboard-text") });
       });
     dom.window.document
       .querySelectorAll("td.flag > a > img")
@@ -79,6 +88,11 @@ async function getScrapping(url) {
         Mbps.push({ Mbps: item.textContent });
       });
 
+    const redirect = await Promise.all(tempLink.map(async(obj) => {
+      const redir = await getRedirect(obj.Link)
+      Link.push({Link: redir})
+    }))
+    
     const channels = ID.map((item, i) => {
       const obj = Object.assign(
         {},
@@ -94,7 +108,7 @@ async function getScrapping(url) {
       );
       return obj;
     });
-    
+    console.log(channels)
     const concat = FinalScrap.concat(...channels)
     FinalScrap.push(...concat)
 
@@ -110,4 +124,4 @@ async function getScrapping(url) {
   });
 }
 
-getScrapping(iptvCatURL + "/brazil");
+getScrapping(iptvCatURL + "/brazil/43");

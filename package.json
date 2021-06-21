@@ -4,7 +4,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "start": "node --stack-size=32000 index.js"
+    "start": "node index.js"
   },
   "author": "http://github.com/mracnelas",
   "license": "Apache-2.0",
