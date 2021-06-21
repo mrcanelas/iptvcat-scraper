@@ -108,7 +108,7 @@ async function getScrapping(url) {
       );
       return obj;
     });
-    console.log(channels)
+
     const concat = FinalScrap.concat(...channels)
     FinalScrap.push(...concat)
 
