@@ -124,4 +124,4 @@ async function getScrapping(url) {
   });
 }
 
-getScrapping(iptvCatURL + "/brazil/43");
+getScrapping(iptvCatURL + "/brazil");
