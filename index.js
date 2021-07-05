@@ -1,5 +1,6 @@
 const fs = require("fs-extra");
 const axios = require("axios");
+const jsonConcat = require("json-concat");
 const { JSDOM } = require("jsdom");
 const iptvCatDomain = "iptvcat.com";
 const iptvCatURL = "https://" + iptvCatDomain;
@@ -27,7 +28,7 @@ async function getScrapping(url) {
         dom.window.document.querySelector('a[rel="next"]').getAttribute("href")
       : null;
 
-  const pageNumber = (url.split('/')[4] !== undefined) ? url.split('/')[4] : 1
+  const pageNumber = url.split("/")[4] !== undefined ? url.split("/")[4] : 1;
 
   const ID = [],
     tempLink = [],
@@ -106,7 +107,7 @@ async function getScrapping(url) {
   });
 
   fs.outputJson(
-    `./data/${channels[0].Country}/${pageNumber}.json`,
+    `./temp/${channels[0].Country}/${pageNumber}.json`,
     channels,
     function (err) {
       if (err) return console.log(err);
@@ -114,11 +115,24 @@ async function getScrapping(url) {
   );
 
   if (nextPage !== null) {
-    console.log("Sucess");
+    console.log("Finished:" + url);
     getScrapping(nextPage);
   } else {
-
+    fs.ensureDir("./data/countries", (err) => {
+      console.log(err);
+    });
+    jsonConcat(
+      {
+        src: `./temp/${channels[0].Country}`,
+        dest: `./data/countries/${channels[0].Country}.json`,
+      },
+      function (json) {
+        console.log("Sucess");
+      }
+    );
   }
 }
 
-getScrapping(iptvCatURL + "/brazil");
+getScrapping(iptvCatURL + '/brazil')
+
+module.exports = { getScrapping };
