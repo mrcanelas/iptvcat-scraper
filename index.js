@@ -1,6 +1,6 @@
 const fs = require("fs-extra");
 const axios = require("axios");
-const jsonConcat = require("json-concat");
+const mergeJSON = require("merge-json")
 const { JSDOM } = require("jsdom");
 const iptvCatDomain = "iptvcat.com";
 const iptvCatURL = "https://" + iptvCatDomain;
@@ -105,34 +105,29 @@ async function getScrapping(url) {
     );
     return obj;
   });
-
-  fs.outputJson(
-    `./temp/${channels[0].Country}/${pageNumber}.json`,
-    channels,
-    function (err) {
+  if (pageNumber == 1) {
+    fs.outputJson(`./data/${channels[0].Country}.json`, channels, (err) => {
       if (err) return console.log(err);
-    }
-  );
-
-  if (nextPage !== null) {
-    console.log("Finished:" + url);
-    getScrapping(nextPage);
-  } else {
-    fs.ensureDir("./data/countries", (err) => {
-      console.log(err);
     });
-    jsonConcat(
-      {
-        src: `./temp/${channels[0].Country}`,
-        dest: `./data/countries/${channels[0].Country}.json`,
-      },
-      function (json) {
-        console.log("Sucess");
-      }
-    );
+    if (nextPage !== null) {
+      console.log("Finished:" + url);
+      getScrapping(nextPage)
+    }
+  } else {
+    fs.readJson(`./data/${channels[0].Country}.json`, (err, packageObj) => {
+      if (err) console.error(err);
+      const result = mergeJSON.merge(packageObj, channels) ;
+      fs.outputJson(`./data/${channels[0].Country}.json`, result, (err) => {
+        if (err) return console.log(err);
+        if (nextPage !== null) {
+          console.log("Finished:" + url);
+          getScrapping(nextPage)
+        }
+      });
+    });
   }
 }
 
-getScrapping(iptvCatURL + '/brazil')
+getScrapping(iptvCatURL + "/brazil");
 
 module.exports = { getScrapping };
