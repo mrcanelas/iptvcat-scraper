@@ -5,8 +5,6 @@ const { JSDOM } = require("jsdom");
 const iptvCatDomain = "iptvcat.com";
 const iptvCatURL = "https://" + iptvCatDomain;
 
-exeScraper()
-
 function getStreamID(value) {
   const Id = value.replace("border-solid belongs_to_", "");
   return Id;
@@ -130,16 +128,6 @@ async function getScrapping(url) {
   }
 }
 
-async function exeScraper() {
-  const countries = []
-  const resp = await axios.get(iptvCatURL)
-  const dom = new JSDOM(resp.data)
-  const items = dom.window.document.querySelectorAll('a.regions.country')
-  items.forEach(item => {
-    const url = item.href
-    countries.push(url)
-  })
-  for(let i = 0; countries[i] !== undefined; i++) {
-    const scrapper = await Promise.all([getScrapping(countries[i])])
-  }
-}
+getScrapping(iptvCatURL + "/brazil");
+
+module.exports = { getScrapping };
